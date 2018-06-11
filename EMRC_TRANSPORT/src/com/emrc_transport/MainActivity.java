@@ -39,11 +39,11 @@ import javax.net.ssl.*;
 @SuppressLint("HandlerLeak")
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, OnItemLongClickListener,
 		OnItemSelectedListener, OnTouchListener, LocationListener, OnPageChangeListener {
-	// 192.168.1.150 // 120.119.155.80
-	public static String ip = "120.119.155.80";
-	public static int port = 1195;
+	
+	public static String ip = "xxx.xxx.xxx.xxx";
+	public static int port = xxxx;
 	private int id_Y = 2018, id_M = 9, id_D = 15;
-	// private String Web = "http://120.119.155.80/app/";
+	
 	private int downX = 0, downY = 0;
 	private boolean write = false, nfc = false, gps = false, car = false;
 	private boolean home = false, sktRun = false, dblist = false;
@@ -600,7 +600,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		print_item_6.setOnClickListener(this);
 		if (!this.getResources().getConfiguration().locale.getCountry().equals("TW")) {
 			bg_emrc.setImageResource(R.drawable.bg_emrc);
-			// Web = "http://120.119.155.80/en/";
+			
 			EN = true;
 		}
 	}
