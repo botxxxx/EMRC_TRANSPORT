@@ -41,7 +41,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		OnItemSelectedListener, OnTouchListener, LocationListener, OnPageChangeListener {
 	
 	public static String ip = "xxx.xxx.xxx.xxx";
-	public static int port = xxxx;
+	public static int port = xxx;
 	private int id_Y = 2018, id_M = 9, id_D = 15;
 	
 	private int downX = 0, downY = 0;
