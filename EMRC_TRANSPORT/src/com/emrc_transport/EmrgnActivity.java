@@ -28,7 +28,7 @@ import android.widget.Toast;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class EmrgnActivity extends Activity implements OnClickListener {
-	public static ArrayList<View> viewlist = new ArrayList<View>();
+	private ArrayList<View> viewlist = new ArrayList<View>();
 	private ArrayList<String> treatment_list_string = new ArrayList<String>();
 	private ArrayList<Boolean> treatment_list_click = new ArrayList<Boolean>();
 	private ImageView ok;
@@ -59,7 +59,81 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 		super.onDestroy();
 	}
 
+	private String getLine(String msg, int run, char key) {
+		return msg.substring(run).substring(0, msg.substring(run).indexOf(key));
+	}
+
 	private void load() {
+		String emrgn = MainActivity.emrgn;
+		// MainActivity.toast(emrgn, this);
+		if (emrgn != null) {
+			ArrayList<String> tmp = new ArrayList<String>();
+			int tag1 = 0;
+			while (tag1 < emrgn.length()) {
+				String msg = getLine(emrgn, tag1, '|');
+				tag1 += msg.length() + 1;
+				tmp.add(msg);
+				// MainActivity.toast(msg, this);
+			}
+			for (int at = 0; at < tmp.size(); at++) {
+				int tag2 = 0;
+				int type = Integer.parseInt(tmp.get(at).substring(0, 1));
+				tag2++;
+				String sum = getLine(tmp.get(at), tag2, '/');
+				int num = Integer.parseInt(sum);
+				tag2 += sum.length() + 1;
+				String ts = tmp.get(at).substring(tag2);
+				CheckBox cb = (CheckBox) viewlist.get(num).findViewById(R.id.cb_style);
+				CheckBox cb2 = (CheckBox) viewlist.get(num).findViewById(R.id.cb_style_2);
+				CheckBox cb3 = (CheckBox) viewlist.get(num).findViewById(R.id.cb_style_3);
+				EditText ed = (EditText) viewlist.get(num).findViewById(R.id.ed_style);
+				EditText ed1 = (EditText) viewlist.get(num).findViewById(R.id.ed_style_1);
+				EditText ed2 = (EditText) viewlist.get(num).findViewById(R.id.ed_style_2);
+				EditText ed3 = (EditText) viewlist.get(num).findViewById(R.id.ed_style_3);
+				cb.setChecked(true);
+				switch (type) {
+				case 0:
+					// no message
+					break;
+				case 1:
+					// 1 message
+					ed.setText(ts + "");
+					break;
+				case 2:
+					// TODO å‘¼å¸é“è™•ç½® æ°£ç®¡å…§ç®¡..
+					int tag3 = 0;
+					String s2_1 = getLine(ts, tag3, '/');
+					tag3 += s2_1.length() + 1;
+					String s2_2 = getLine(ts, tag3, '/');
+					ed.setText(s2_1 + "");
+					ed1.setText(s2_2 + "");
+					break;
+				case 3:
+					// TODO è—¥ç‰©è™•ç½® å»ºè­°ä½¿ç”¨..
+					ed1.setText(ts + "");
+					break;
+				case 4:
+					int tag4 = 0;
+					// TODO è—¥ç‰©è™•ç½® éœè„ˆè¼¸æ¶²..
+					String s4_1 = getLine(ts, tag4, '/');
+					tag4 += s4_1.length() + 1;
+					String s4_2 = getLine(ts, tag4, '/');
+					boolean b4_1 = s4_1.substring(0, 1).equals("1");
+					boolean b4_2 = s4_2.substring(0, 1).equals("1");
+					cb2.setChecked(b4_1);
+					cb3.setChecked(b4_2);
+					ed2.setText(s4_1.substring(1) + "");
+					ed3.setText(s4_2.substring(1) + "");
+					break;
+				case 5:
+					// null
+					break;
+				case 6:
+					// title
+					break;
+				}
+			}
+		}
 		String number = MainActivity.number;
 		if (number.length() > 2) {
 			emrgn_no_top.setText(number);
@@ -67,10 +141,63 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 	}
 
 	private void save() {
+		MainActivity.emrgn = "";
 		ArrayList<String> tmp_title = new ArrayList<String>();
 		ArrayList<String> tmp_string = new ArrayList<String>();
 		for (int i = 0; i < treatment_list_click.size(); i++) {
+			String emrgn = "";
 			if (treatment_list_click.get(i)) {
+				int type = Integer.parseInt(treatment_list_string.get(i).substring(0, 1));
+				emrgn += type + "" + i + "/";
+				switch (type) {
+				case 0:
+					// no message
+					emrgn += "|";
+					break;
+				case 1:
+					// 1 message
+					emrgn += getViewString_0(i) + "|";
+					break;
+				case 2:
+					// TODO å‘¼å¸é“è™•ç½® æ°£ç®¡å…§ç®¡..
+					emrgn += getViewString_0(i) + "/" + getViewString_1(i) + "/|";
+					break;
+				case 3:
+					// TODO è—¥ç‰©è™•ç½® å»ºè­°ä½¿ç”¨..
+					emrgn += getViewString_1(i) + "|";
+					break;
+				case 4:
+					// TODO è—¥ç‰©è™•ç½® éœè„ˆè¼¸æ¶²..
+					CheckBox cb2 = (CheckBox) viewlist.get(i).findViewById(R.id.cb_style_2);
+					CheckBox cb3 = (CheckBox) viewlist.get(i).findViewById(R.id.cb_style_3);
+					EditText ed2 = (EditText) viewlist.get(i).findViewById(R.id.ed_style_2);
+					EditText ed3 = (EditText) viewlist.get(i).findViewById(R.id.ed_style_3);
+					String cmg = "";
+					if (cb2.isChecked()) {
+						cmg += "1";
+					} else {
+						cmg += "0";
+					}
+					cmg += ed2.getText().toString() + "/";
+
+					if (cb3.isChecked()) {
+						cmg += "1";
+					} else {
+						cmg += "0";
+					}
+					cmg += ed3.getText().toString() + "/";
+					emrgn += cmg + "|";
+					break;
+				case 5:
+					// null
+					emrgn += "|";
+					break;
+				case 6:
+					// title
+					emrgn += "|";
+					break;
+				}
+				MainActivity.emrgn += emrgn;
 				switch (i) {
 				case 0:// --------------------------
 					tmp_string.add(getString(R.string.s_EMRGN_00));
@@ -100,13 +227,11 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 					tmp_string.add(getString(R.string.s_EMRGN_08));
 					break;
 				case 9:
-					tmp_string.add(getString(R.string.s_EMRGN_091) + getViewString_0(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_52));
+					tmp_string.add(getString(R.string.s_EMRGN_091) + getViewString_0(i) + getString(R.string.s_ts_52));
 					break;
 				case 10:
-					tmp_string.add(getString(R.string.s_EMRGN_10) + getViewString_0(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_52) + "\n fix " + getViewString_1(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_53));
+					tmp_string.add(getString(R.string.s_EMRGN_10) + getViewString_0(i) + getString(R.string.s_ts_52)
+							+ "\n fix " + getViewString_1(i) + getString(R.string.s_ts_53));
 					break;
 				case 11:
 					tmp_string.add(getString(R.string.s_EMRGN_11));
@@ -139,12 +264,10 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 					tmp_string.add(getString(R.string.s_EMRGN_20));
 					break;
 				case 21:
-					tmp_string.add(getString(R.string.s_EMRGN_211) + getViewString_0(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_54));
+					tmp_string.add(getString(R.string.s_EMRGN_211) + getViewString_0(i) + getString(R.string.s_ts_54));
 					break;
 				case 22:
-					tmp_string.add(getString(R.string.s_EMRGN_221) + getViewString_0(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_54));
+					tmp_string.add(getString(R.string.s_EMRGN_221) + getViewString_0(i) + getString(R.string.s_ts_54));
 					break;
 				case 23:
 					tmp_string.add(getString(R.string.s_EMRGN_23));
@@ -153,8 +276,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 					tmp_string.add(getString(R.string.s_EMRGN_24));
 					break;
 				case 25:
-					tmp_string.add(getString(R.string.s_EMRGN_251) + getViewString_0(i) + getViewString_1(i)
-							+ getString(R.string.s_ts_55));
+					tmp_string.add(getString(R.string.s_EMRGN_251) + getViewString_0(i) + getString(R.string.s_ts_55));
 					break;
 				case 26:
 					tmp_string.add(getString(R.string.s_EMRGN_26));
@@ -239,11 +361,11 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 		treatment_list_click.clear();
 		viewlist.clear();
 		/*
-		 * 0/ «á­±¨S¸ê®Æ 1/ ¤@­ÓEdit 2/ ¯S®í 3/ ¯S®í 4/ ¯S®í 5/ ³£¨S¦³ 6/ ¼ÐÃD
+		 * 0/ å¾Œé¢æ²’è³‡æ–™ 1/ ä¸€å€‹Edit 2/ ç‰¹æ®Š 3/ ç‰¹æ®Š 4/ ç‰¹æ®Š 5/ éƒ½æ²’æœ‰ 6/ æ¨™é¡Œ
 		 * 
 		 */
 
-		// ©I§l¹D³B¸m
+		// å‘¼å¸é“è™•ç½®
 		treatment_list_string.add("6/" + getString(R.string.s_EMRGN_00));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_01));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_02));
@@ -256,9 +378,9 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 		treatment_list_string.add("1/" + getString(R.string.s_EMRGN_09));
 		treatment_list_string.add("2/");
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_11));
-		// ªÅ¥Õ¤º®e
+		// ç©ºç™½å…§å®¹
 		// treatment_list_string.add("5/");
-		// ³Ð¶Ë³B¸m
+		// å‰µå‚·è™•ç½®
 		treatment_list_string.add("6/" + getString(R.string.s_EMRGN_12));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_13));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_14));
@@ -267,7 +389,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_17));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_18));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_19));
-		// ¤ßªÍ´_µd³N
+		// å¿ƒè‚ºå¾©ç”¦è¡“
 		treatment_list_string.add("6/" + getString(R.string.s_EMRGN_20));
 		treatment_list_string.add("1/" + getString(R.string.s_EMRGN_21));
 		treatment_list_string.add("1/" + getString(R.string.s_EMRGN_22));
@@ -275,13 +397,13 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_24));
 		treatment_list_string.add("1/" + getString(R.string.s_EMRGN_25));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_26));
-		// ÃÄª«³B¸m
+		// è—¥ç‰©è™•ç½®
 		treatment_list_string.add("6/" + getString(R.string.s_EMRGN_27));
 		treatment_list_string.add("4/");
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_29));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_30));
 		treatment_list_string.add("3/");
-		// ¨ä¥L³B¸m
+		// å…¶ä»–è™•ç½®
 		treatment_list_string.add("6/" + getString(R.string.s_EMRGN_32));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_33));
 		treatment_list_string.add("0/" + getString(R.string.s_EMRGN_34));
@@ -385,7 +507,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 			row_3.setVisibility(View.GONE);
 			break;
 		case 2:
-			// TODO ©I§l¹D³B¸m ®ðºÞ¤ººÞ..
+			// TODO å‘¼å¸é“è™•ç½® æ°£ç®¡å…§ç®¡..
 			cb_style.setText(getString(R.string.s_EMRGN_10));
 			ed_style.setFilters(new InputFilter[] { new InputFilter.LengthFilter(3) });
 			ed_style.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER);
@@ -434,7 +556,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 			row_3.setVisibility(View.GONE);
 			break;
 		case 3:
-			// TODO ÃÄª«³B¸m «ØÄ³¨Ï¥Î..
+			// TODO è—¥ç‰©è™•ç½® å»ºè­°ä½¿ç”¨..
 			cb_style.setText(getString(R.string.s_EMRGN_31));
 			ed_style.setVisibility(View.GONE);
 			tv_style.setVisibility(View.GONE);
@@ -466,7 +588,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 			row_3.setVisibility(View.GONE);
 			break;
 		case 4:
-			// TODO ÃÄª«³B¸m ÀR¯ß¿é²G..
+			// TODO è—¥ç‰©è™•ç½® éœè„ˆè¼¸æ¶²..
 			TextWatcher ed2 = new TextWatcher() {
 				int ssf = 0;
 
@@ -577,7 +699,7 @@ public class EmrgnActivity extends Activity implements OnClickListener {
 			for (int i = 0; i < S.size(); i++) {
 				if (i == 0) {
 					if (data) {
-						if(other.length()==0){
+						if (other.length() == 0) {
 							other += "\n";
 						}
 						other += "(" + S.get(i) + ".";
