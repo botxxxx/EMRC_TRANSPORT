@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.text.*;
 import java.util.*;
 
 import android.*;
@@ -13,6 +12,7 @@ import android.app.*;
 import android.content.*;
 import android.content.IntentFilter.*;
 import android.content.pm.*;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.*;
 import android.graphics.Bitmap.CompressFormat;
 import android.location.*;
@@ -29,8 +29,8 @@ import android.view.*;
 import android.view.View.*;
 import android.widget.AdapterView.*;
 import android.widget.*;
-import com.emrc_transport.HomeListen.*;
 
+import com.emrc_transport.HomeListen.*;
 import javax.crypto.Cipher;
 import javax.crypto.spec.*;
 import javax.net.ssl.*;
@@ -41,9 +41,8 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		OnItemSelectedListener, OnTouchListener, LocationListener, OnPageChangeListener {
 	
 	public static String ip = "xxx.xxx.xxx.xxx";
-	public static int port = xxx;
-	private int id_Y = 2018, id_M = 9, id_D = 15;
-	
+	public static int port = xxxx;
+	private int id_Y = 2018, id_M = 10, id_D = 20;
 	private int downX = 0, downY = 0;
 	private boolean write = false, nfc = false, gps = false, car = false;
 	private boolean home = false, sktRun = false, dblist = false;
@@ -61,7 +60,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	private Handler SMSHandler = new Handler();
 	private Handler GPSHandler = new Handler();
 	private IntentFilter[] gNdefExchangeFilters, gWriteTagFilters;
-	private ImageView main_left, main_right, medi_clear, medi_swap, menu_ok, bg_emrc;
+	private ImageView main_left, main_right, medi_clear, medi_swap, menu_ok, menu_re, bg_emrc;
 	// private TableRow btn_USER, btn_MASTER, btn_CAR;
 	private LocationManager lms;
 	private NfcAdapter nfcAdapter;
@@ -76,12 +75,12 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	private static final String KEY_STORE_CLIENT_PATH = "kserver.bks"; // 客户端要给服务器端认证的证书
 	private static final String KEY_STORE_TRUST_PATH = "tclient.bks"; // 客户端验证服务器端的证书库
 	private static final String KEY_STORE_PASSWORD = "123456"; // 客户端证书密码
-	public static int gender = 2, leve_count = 5, phot_count = 0;
+	public static int gender = 2, leve_count = 5, phot_count = 0, dev_count = 20;
 	public static int emrc_count = 0, hosp_count = 0, status_count = 0, textSize = 0;
-	public static boolean net = false, link = false, user = false, pin = false, f = true, EN = false;
-	public static String mmsg, handmsg, number = "", car_brand = "", identity = "";
+	public static boolean net = false, link = false, user = false, pin = false, f = true, EN = false, dev = false;
+	public static String mmsg, handmsg, number = "", car_brand = "", identity = "", emrgn;
 	public static Socket skt;
-	public static Bitmap info_photo = null;
+	public static Bitmap info_photo = null, tmp_bmp = null;
 	private static ListView menu_list, medi_list;
 
 	public static DisplayMetrics metrics = new DisplayMetrics();
@@ -111,6 +110,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		setContentView(R.layout.main);
 		metrics = getResources().getDisplayMetrics();
 		findViewById();
+		load_DEV_DATA();
 		checkToday(0, 0, 0, false);
 		addTab();
 		view_0();
@@ -204,7 +204,16 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK:
 			save();
-			android.os.Process.killProcess(android.os.Process.myPid());
+			new AlertDialog.Builder(MainActivity.this).setTitle(getString(R.string.s_ts_61))
+					.setPositiveButton(getString(R.string.s_ts_12), new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface arg0, int arg1) {
+
+						}
+					}).setNegativeButton(getString(R.string.s_ts_13), new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface arg0, int arg1) {
+							android.os.Process.killProcess(android.os.Process.myPid());
+						}
+					}).show();
 			return true;
 		default:
 			break;
@@ -238,8 +247,9 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			int PHONE = checkSelfPermission(Manifest.permission.CALL_PHONE);
 			int LOCATION = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
 			int STORAGE = checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+			int CAMERA = checkSelfPermission(Manifest.permission.CAMERA);
 
-			if (permission(PHONE) || permission(LOCATION) || permission(STORAGE)) {
+			if (permission(PHONE) || permission(LOCATION) || permission(STORAGE) || permission(CAMERA)) {
 				showMessageOKCancel("親愛的用戶您好:\n由於Android 6.0 以上的版本在權限上有些更動，我們需要您授權以下的權限，感謝。",
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int which) {
@@ -263,6 +273,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		permissions.add(Manifest.permission.CALL_PHONE);
 		permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
 		permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+		permissions.add(Manifest.permission.CAMERA);
 		requestPermissions(permissions.toArray(new String[permissions.size()]), 0);
 	}
 
@@ -275,12 +286,6 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			// 沒有權限
 			toast(getString(R.string.s_ts_58), this);
 			showPermission();
-			// new Timer(true).schedule(new TimerTask() {
-			// public void run() {
-			// finish();
-			// }
-			// }, 3000);
-
 		}
 	}
 
@@ -382,6 +387,12 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			 */
 		}
 		getFile(File, Date);
+
+		if (dev) {
+			File = "DEV.txt";
+			Date = 1 + "";
+			getFile(File, Date);
+		}
 	}
 
 	private void getFile(String File, String Date) {
@@ -394,6 +405,37 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		}
 	}
 
+	private String getData(String filename) {
+		String DATA = "";
+		FileInputStream fin = null;
+		ByteArrayOutputStream bos = null;
+		try {
+			fin = this.openFileInput(filename);
+			bos = new ByteArrayOutputStream();
+			int size;
+			size = fin.available();
+
+			byte[] data = new byte[size];
+			fin.read(data);
+			bos.write(data);
+			DATA = bos.toString();
+			bos.close();
+			fin.close();
+		} catch (IOException e) {
+		}
+		return DATA;
+	}
+
+	private void load_DEV_DATA() {
+		String File = "DEV.txt";
+		String Date = "";
+		Date = getData(File);
+		if (Date.length() > 0) {
+			if (Integer.parseInt(Date) == 1)
+				dev = true;
+		}
+	}
+
 	private void load_USER_DATA() {
 		String File = "USER.txt";
 		String Date = "", DateTmp;
@@ -401,28 +443,15 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		ArrayList<EditText> datelist = new ArrayList<EditText>();
 		datelist.add(mediCar_unit);
 		datelist.add(mediCar_brand);
-		try {
-			FileInputStream inStream = this.openFileInput(File);
-			ByteArrayOutputStream stream = new ByteArrayOutputStream();
-			byte[] buffer = new byte[1024];
-			int length = -1;
-			while ((length = inStream.read(buffer)) != -1) {
-				stream.write(buffer, 0, length);
-			}
-			Date = stream.toString();
-			stream.close();
-			inStream.close();
-			if (Date.length() > 0) {
-				for (int i = 0; i < 2; i++) {
-					DateTmp = Date.substring(tmp).substring(0, Date.substring(tmp).indexOf('|'));
-					if (!DateTmp.equals("null")) {
-						datelist.get(i).setText(DateTmp);
-					}
-					tmp = tmp + DateTmp.length() + 1;
+		Date = getData(File);
+		if (Date.length() > 0) {
+			for (int i = 0; i < 2; i++) {
+				DateTmp = Date.substring(tmp).substring(0, Date.substring(tmp).indexOf('|'));
+				if (!DateTmp.equals("null")) {
+					datelist.get(i).setText(DateTmp);
 				}
+				tmp = tmp + DateTmp.length() + 1;
 			}
-		} catch (FileNotFoundException e) {
-		} catch (IOException e) {
 		}
 		String unit = mediCar_unit.getText().toString() + "";
 		String brand = mediCar_brand.getText().toString() + "";
@@ -443,29 +472,16 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		String Date = "", DateTmp;
 		int tmp = 0, run = 0;
 
-		try {
-			FileInputStream inStream = this.openFileInput(File);
-			ByteArrayOutputStream stream = new ByteArrayOutputStream();
-			byte[] buffer = new byte[1024];
-			int length = -1;
-			while ((length = inStream.read(buffer)) != -1) {
-				stream.write(buffer, 0, length);
+		Date = getData(File);
+		if (Date.length() > 0) {
+			run = Integer.parseInt(Date.substring(tmp).substring(0, Date.substring(tmp).indexOf('=')));
+			tmp += ((run + "").length() + 1);
+			for (int i = 0; i < run; i++) {
+				DateTmp = Date.substring(tmp + i).substring(0, Date.substring(tmp + i).indexOf('|'));
+				medi_item.add(DateTmp + '|');
+				tmp += DateTmp.length();
 			}
-			Date = stream.toString();
-			stream.close();
-			inStream.close();
-			if (Date.length() > 0) {
-				run = Integer.parseInt(Date.substring(tmp).substring(0, Date.substring(tmp).indexOf('=')));
-				tmp += ((run + "").length() + 1);
-				for (int i = 0; i < run; i++) {
-					DateTmp = Date.substring(tmp + i).substring(0, Date.substring(tmp + i).indexOf('|'));
-					medi_item.add(DateTmp + '|');
-					tmp += DateTmp.length();
-				}
-				user_upload();
-			}
-		} catch (FileNotFoundException e) {
-		} catch (IOException e) {
+			user_upload();
 		}
 	}
 
@@ -474,9 +490,27 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		main_right = (ImageView) findViewById(R.id.main_right);
 		pager1 = (ViewPager) findViewById(R.id.main_pager1);
 		main_log = (Button) findViewById(R.id.main_log);
-
 		main_left.getBackground().setAlpha(50);
 		main_right.getBackground().setAlpha(50);
+		main_log.setOnClickListener(this);
+	}
+
+	@SuppressWarnings("unused")
+	private String getTime() {
+		Calendar calendar = Calendar.getInstance();
+		String h = "" + calendar.get(Calendar.HOUR_OF_DAY);
+		if (h.length() == 1) {
+			h = "0" + h;
+		}
+		String m = "" + calendar.get(Calendar.MINUTE);
+		if (m.length() == 1) {
+			m = "0" + m;
+		}
+		String s = "" + calendar.get(Calendar.SECOND);
+		if (s.length() == 1) {
+			s = "0" + s;
+		}
+		return h + ":" + m + ":" + s;
 	}
 
 	private void checkToday(int y, int m, int d, boolean check) {
@@ -517,16 +551,26 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 					}
 				}
 			}
-			if (pass) {
-				main_log.setVisibility(View.GONE);
-				toast(getString(R.string.s_ts_2) + m + getString(R.string.s_ts_4) + d + getString(R.string.s_ts_5),
-						this);
+			if (!dev) {
+				if (pass) {
+					main_log.setVisibility(View.GONE);
+					toast(getString(R.string.s_ts_2) + m + getString(R.string.s_ts_4) + d + getString(R.string.s_ts_5),
+							this);
+				} else {
+					main_log.setVisibility(View.VISIBLE);
+					toast(getString(R.string.s_ts_3) + m + getString(R.string.s_ts_4) + d + getString(R.string.s_ts_5),
+							this);
+					try {
+						main_log.setText(
+								"軟體版本:" + this.getPackageManager().getPackageInfo(getPackageName(), 0).versionCode
+										+ "\n" + getString(R.string.s_ts_3) + m + getString(R.string.s_ts_4) + d
+										+ getString(R.string.s_ts_5));
+					} catch (NameNotFoundException e) {
+						e.printStackTrace();
+					}
+				}
 			} else {
-				main_log.setVisibility(View.VISIBLE);
-				toast(getString(R.string.s_ts_3) + m + getString(R.string.s_ts_4) + d + getString(R.string.s_ts_5),
-						this);
-				main_log.setText(
-						getString(R.string.s_ts_3) + m + getString(R.string.s_ts_4) + d + getString(R.string.s_ts_5));
+				main_log.setVisibility(View.GONE);
 			}
 		}
 	}
@@ -600,7 +644,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		print_item_6.setOnClickListener(this);
 		if (!this.getResources().getConfiguration().locale.getCountry().equals("TW")) {
 			bg_emrc.setImageResource(R.drawable.bg_emrc);
-			
+			// Web = "http://120.119.155.80/en/";
 			EN = true;
 		}
 	}
@@ -611,6 +655,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		menu_No = (TextView) main_view.get(1).findViewById(R.id.main_no_menu);
 		menu_list = (ListView) main_view.get(1).findViewById(R.id.menulist);
 		menu_ok = (ImageView) main_view.get(1).findViewById(R.id.menu_ok);
+		menu_re = (ImageView) main_view.get(1).findViewById(R.id.menu_re);
 		spinner = (Spinner) main_view.get(1).findViewById(R.id.menu_spinner);
 		menu_item.add(getString(R.string.s_Menu_1)); // information
 		menu_item.add(getString(R.string.s_Menu_2)); // emergency
@@ -717,6 +762,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		menu_upload(this);
 		menu_list.setOnItemClickListener(this);
 		menu_ok.setOnClickListener(this);
+		menu_re.setOnClickListener(this);
 		spinner.setOnItemSelectedListener(this);
 		spinner.setAdapter(new MySpinnerAdapter_MAIN(this, Treatment_unit, Treatment_leve));
 	}
@@ -1240,21 +1286,20 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	}
 
 	public void onClick(View v) {
-		// if (v == medi_clear) {
-		// new AlertDialog.Builder(this).setTitle(getString(R.string.s_ts_11))
-		// .setPositiveButton(getString(R.string.s_ts_12), new
-		// DialogInterface.OnClickListener() {
-		// public void onClick(DialogInterface arg0, int arg1) {
-		// }
-		// }).setNegativeButton(getString(R.string.s_ts_13), new
-		// DialogInterface.OnClickListener() {
-		// public void onClick(DialogInterface arg0, int arg1) {
-		// medi_item.clear();
-		// getFile("DATA.txt", "");
-		// user_upload();
-		// }
-		// }).show();
-		// }
+		if (v == main_log) {
+			dev_count--;
+			if (dev_count == 10)
+				toast("您只需完成剩餘的三個步驟，即可成為開發人員。", this);
+			if (dev_count == 5)
+				toast("您只需完成剩餘的二個步驟，即可成為開發人員。", this);
+			if (dev_count == 1)
+				toast("您只需完成剩餘的一個步驟，即可成為開發人員。", this);
+			if (dev_count == 0) {
+				toast("您現在已成為開發人員。", this);
+				main_log.setVisibility(View.GONE);
+				dev = true;
+			}
+		}
 		if (v == medi_swap) {
 			if (link) {
 				if (!dblist) {
@@ -1287,35 +1332,11 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			user_upload();
 			addNFC();
 		}
-		// if (v == print_item_0) {
-		// setEMRC(3);
-		// emrc_count = 0;
-		// uploadview(MainActivity.this);
-		// }
-		// if (v == print_item_1) {
-		// setEMRC(0);
-		// emrc_count = 0;
-		// }
-		// if (v == print_item_2) {
-		// setEMRC(1);
-		// emrc_count = 1;
-		// }
-		// if (v == print_item_3) {
-		// setEMRC(1);
-		// emrc_count = 2;
-		// }
-		// if (v == print_item_4) {
-		// setEMRC(1);
-		// emrc_count = 512;
-		// }
-		// if (v == print_item_5) {
-		// setEMRC(1);
-		// emrc_count = 8;
-		// }
-		// if (v == print_item_6) {
-		// setEMRC(2);
-		// emrc_count = 0;
-		// }
+		if (v == menu_re) {
+			user_upload();
+			getReset(true);
+			toast(getResources().getString(R.string.s_ts_60), this);
+		}
 		if (v == mediCar_btn0) { // 出勤
 			selectCar(0, mediCar_btn0);
 		}
@@ -1460,23 +1481,27 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			start(position);
 		}
 		if (parent == medi_list) {
-			String pms;
-			if (dblist && position != 0) {
-				pms = lead_item.get(position);
+			String pms = "";
+			if (dblist) {
+				if (position != 0)
+					pms = lead_item.get(position);
 			} else {
 				pms = medi_item.get(position);
 			}
-			final String mmsg = pms;
-			new AlertDialog.Builder(this).setTitle(getString(R.string.s_ts_20))
-					.setPositiveButton(getString(R.string.s_ts_12), new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface arg0, int arg1) {
-						}
-					}).setNegativeButton(getString(R.string.s_ts_13), new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface arg0, int arg1) {
-							getNFCString(mmsg);
-							checkItem(setNFCString());
-						}
-					}).show();
+			if (pms.length() != 0) {
+				final String mmsg = pms;
+				// 是否要取得傷患資訊(DB)
+				new AlertDialog.Builder(this).setTitle(getString(R.string.s_ts_20))
+						.setPositiveButton(getString(R.string.s_ts_12), new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface arg0, int arg1) {
+							}
+						}).setNegativeButton(getString(R.string.s_ts_13), new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface arg0, int arg1) {
+								getNFCString(mmsg);
+								// checkItem(setNFCString());
+							}
+						}).show();
+			}
 		}
 	}
 
@@ -2010,7 +2035,6 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					// TODO TCP SSLSocket
 					// 使用TLS協議
 					SSLContext context = SSLContext.getInstance("TLS");
 
@@ -2067,21 +2091,22 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	}
 
 	private void DateInput(Boolean i) {
+		Adler32 inChecker = new Adler32();
+		CheckedDataInput in = null;
 		try {
 			DataInputStream dis = new DataInputStream(skt.getInputStream());
 			int size = dis.readInt();
+			in = new CheckedDataInput(new DataInputStream(skt.getInputStream()), inChecker);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] data = new byte[size];
-			int len = 0;
-			while (len < size) {
-				len += dis.read(data, len, size - len);
-			}
-			ByteArrayOutputStream outPut = new ByteArrayOutputStream();
+			in.readFully(data);
+			out.write(data);
 			Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-			bitmap.compress(CompressFormat.JPEG, 100, outPut);
+			bitmap.compress(CompressFormat.JPEG, 100, out);
 			if (i) {
-				info_photo = Tools.compBitmap(bitmap);
+				info_photo = bitmap;
 			} else {
-				phot_bitmap.add(Tools.compBitmap(bitmap));
+				phot_bitmap.add(bitmap);
 			}
 		} catch (IOException e) {
 		}
@@ -2176,15 +2201,6 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		s = s * 6378137.0;
 		s = Math.round(s * 10000) / 10000;
 		return s;
-	}
-
-	@SuppressWarnings("unused")
-	private String DistanceText(double distance) {
-		if (distance < 1000) {
-			return String.valueOf((int) distance) + "m";
-		} else {
-			return new DecimalFormat("#.00").format(distance / 1000) + "km";
-		}
 	}
 
 	private void LocationProvider() {
